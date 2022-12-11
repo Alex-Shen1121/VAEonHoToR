@@ -2,7 +2,7 @@ import numpy as np
 import argparse
 
 
-class HoToR_mod():
+class HoToR_mod:
     def __init__(self):
         # 读取实验参数
         parser = argparse.ArgumentParser(description='Implementation For HoToR')

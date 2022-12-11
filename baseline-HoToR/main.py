@@ -1,20 +1,73 @@
-from scipy import sparse
+import numpy as np
 import argparse
 
-parser = argparse.ArgumentParser(description='PyTorch Variational Autoencoders for Collaborative Filtering')
-parser.add_argument('--data', type=str, default='ml-20m', help='Movielens-20m dataset location')
-parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
-parser.add_argument('--wd', type=float, default=0.00, help='weight decay coefficient')
-parser.add_argument('--batch_size', type=int, default=500, help='batch size')
-parser.add_argument('--epochs', type=int, default=200, help='upper epoch limit')
-parser.add_argument('--total_anneal_steps', type=int, default=200000,
-                    help='the total number of gradient updates for annealing')
-parser.add_argument('--anneal_cap', type=float, default=0.2, help='largest annealing parameter')
-parser.add_argument('--seed', type=int, default=1111, help='random seed')
-parser.add_argument('--cuda', action='store_true', help='use CUDA')
-parser.add_argument('--log-interval', type=int, default=100, metavar='N', help='report interval')
-parser.add_argument('--save', type=str, default='model.pt', help='path to save the final model')
+parser = argparse.ArgumentParser(description='Implementation For HoToR')
+parser.add_argument('--d', type=int, default=100)
+parser.add_argument('--alpha_u', type=float, default=1e-3)
+parser.add_argument('--alpha_v', type=float, default=1e-3)
+parser.add_argument('--beta_v', type=int, default=1e-3)
+parser.add_argument('--gamma', type=int, default=1e-2)
+parser.add_argument('--n', type=int, default=71567)
+parser.add_argument('--m', type=int, default=10681)
+parser.add_argument('--num_iterations', type=int, default=1000)
+parser.add_argument('--topK', type=int, default=5)
+parser.add_argument('--fnTrainData', type=str, default='ML10M.ExplicitPositive4Ranking.copy1.explicit')
+parser.add_argument('--fnTestData', type=str, default='ML10M.ExplicitPositive4Ranking.copy1.test')
+parser.add_argument('--fnEvaluationResult', type=str, default='HoToR_mod_ML10M_TEST_copy1_lambda040_0001_1000.txt')
+parser.add_argument('--lambda_mod', type=int, default=0.4)
 args = parser.parse_args()
 
+U = np.zeros((args.n + 1, args.d))
+V = np.zeros((args.m + 1, args.d))
+biasV = np.zeros(args.m + 1)
+
+
+def readConfigurations(args):
+    print('===================== 读取参数 ====================')
+    print("d: " + str(args.d))
+    print("alpha_u: " + str(args.alpha_u))
+    print("alpha_v: " + str(args.alpha_v))
+    print("beta_v: " + str(args.beta_v))
+    print("gamma: " + str(args.gamma))
+    print("lambda_mod: " + str(args.lambda_mod))
+    print("fnTrainData: " + args.fnTrainData)
+    print("fnTestData: " + args.fnTestData)
+    print("fnEvaluationResult:" + args.fnEvaluationResult)
+    print("n: " + str(args.n))
+    print("m: " + str(args.m))
+    print("num_iterations: " + str(args.num_iterations))
+    print("topK: " + str(args.topK))
+
+
+def readData():
+    pass
+
+
+def initialization():
+    pass
+
+
+def HoToR_mod_training():
+    pass
+
+
+def test():
+    pass
+
+
 if __name__ == '__main__':
-    print(1)
+
+    # 1. read configurations
+    readConfigurations(args);
+
+    # 2. read data
+    readData()
+
+    # 3. initialization
+    initialization()
+
+    # 4. training
+    HoToR_mod_training()
+
+    # 5. test
+    test()

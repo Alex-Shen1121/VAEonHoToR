@@ -1,8 +1,8 @@
 import csv
+import random
 
 import numpy as np
 import argparse
-
 from tqdm import tqdm
 
 
@@ -145,17 +145,43 @@ class HoToR_mod:
                 self.TrainData[userID] = itemSet
 
     def initialization(self):
+        print("==================== 统计量初始化 ====================")
+        # -- g_avg
+        g_avg = 0
+
+        for i in range(1, self.args.m + 1):
+            g_avg += self.itemRatingNumTrain[i]
+        g_avg = g_avg / self.args.n / self.args.m
+        # print("The global average rating:" + str(g_avg))
+
+        # -- biasV
+        for i in range(1, self.args.m + 1):
+            self.biasV[i] = self.itemRatingNumTrain[i] / self.args.n - g_avg
+
+        # -- V
+        for i in range(1, self.args.m + 1):
+            for k in range(self.args.d):
+                self.V[i][k] = (random.random() - 0.5) * 0.01
+
+        # -- U
+        for i in range(1, self.args.n + 1):
+            for k in range(self.args.d):
+                self.U[i][k] = (random.random() - 0.5) * 0.01
+
         pass
 
     def HoToR_mod_training(self):
+        print("==================== 正在读取数据 ====================")
         pass
 
     def test(self):
+        print("==================== 正在读取数据 ====================")
         pass
 
     def main(self):
         self.readConfigurations()
         self.readData()
+        self.initialization()
 
 
 if __name__ == '__main__':

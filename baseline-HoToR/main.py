@@ -8,6 +8,10 @@ from tqdm import tqdm
 
 class HoToR_mod:
     def __init__(self):
+        self.indexItemTrainPurchase = None
+        self.indexUserTrainPurchase = None
+        self.indexItemTrainClick = None
+        self.indexUserTrainClick = None
         self.TrainData = dict()
         self.ItemTrainingSet = set()
         self.num_train_notFive = 0
@@ -94,6 +98,30 @@ class HoToR_mod:
                     itemRatingSet = {}
                 itemRatingSet[itemID] = rating
                 self.TrainData[userID] = itemRatingSet
+
+        # 记录用户浏览未购买的记录（小于5分）
+        self.indexUserTrainClick = np.zeros(self.num_train_notFive)
+        self.indexItemTrainClick = np.zeros(self.num_train_notFive)
+        # 记录用户浏览且购买的记录（等于5分）
+        self.indexUserTrainPurchase = np.zeros(self.num_train - self.num_train_notFive)
+        self.indexItemTrainPurchase = np.zeros(self.num_train - self.num_train_notFive)
+
+        # 统计每个用户/物品的浏览/购买记录
+        # 注：user和item列表一一对应
+        idx, idx5 = 0, 0
+        for u in tqdm(range(1, self.args.n + 1)):
+            if u not in self.TrainData:
+                continue
+            itemSet_u = self.TrainData[u]
+            for i in itemSet_u:
+                if itemSet_u[i] < 5.0:
+                    self.indexUserTrainClick[idx] = u
+                    self.indexItemTrainClick[idx] = i
+                    idx += 1
+                else:
+                    self.indexUserTrainPurchase[idx5] = u
+                    self.indexItemTrainPurchase[idx5] = i
+                    idx5 += 1
 
     def initialization(self):
         pass

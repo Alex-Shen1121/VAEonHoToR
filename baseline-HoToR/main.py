@@ -1,9 +1,26 @@
+import csv
+
 import numpy as np
 import argparse
+
+from tqdm import tqdm
 
 
 class HoToR_mod:
     def __init__(self):
+        self.TrainData = dict()
+        self.ItemTrainingSet = set()
+        self.num_train_notFive = 0
+        self.num_train = 0
+        self.itemRatingNumTrain = None
+        self.userRatingNumTrain = None
+        self.args = None
+
+        self.biasV = None
+        self.V = None
+        self.U = None
+
+    def readConfigurations(self):
         # 读取实验参数
         parser = argparse.ArgumentParser(description='Implementation For HoToR')
         parser.add_argument('--d', type=int, default=100)
@@ -15,55 +32,15 @@ class HoToR_mod:
         parser.add_argument('--m', type=int, default=10681)
         parser.add_argument('--num_iterations', type=int, default=1000)
         parser.add_argument('--topK', type=int, default=5)
-        parser.add_argument('--fnTrainData', type=str, default='ML10M.ExplicitPositive4Ranking.copy1.explicit')
-        parser.add_argument('--fnTestData', type=str, default='ML10M.ExplicitPositive4Ranking.copy1.test')
+        parser.add_argument('--fnTrainData', type=str, default='../dataset/ML10M-ExplicitPositive4Ranking/ML10M'
+                                                               '.ExplicitPositive4Ranking.copy1.explicit')
+        parser.add_argument('--fnTestData', type=str, default='../dataset/ML10M-ExplicitPositive4Ranking/ML10M'
+                                                              '.ExplicitPositive4Ranking.copy1.test')
         parser.add_argument('--fnEvaluationResult', type=str,
                             default='HoToR_mod_ML10M_TEST_copy1_lambda040_0001_1000.txt')
         parser.add_argument('--lambda_mod', type=int, default=0.4)
         self.args = parser.parse_args()
 
-        # 变量初始化
-        self.d = 0
-        self.alpha_u = 0.0
-        self.alpha_v = 0.0
-        self.beta_v = 0.0
-
-        self.gamma = 0.0
-        self.topK = 0
-        self.lambda_mod = 0.0
-
-        self.n = 0
-        self.m = 0
-        self.num_train = 0
-        self.num_train_notFive = 0
-        self.num_iterations = 0
-
-        #  模型参数
-        self.U = []
-        self.V = []
-        self.biasV = []
-
-        self.TrainData = {}
-        self.TestData = {}
-        self.ItemTrainingSet = set()
-
-        #  File name
-        self.fnTrainData = ""
-        self.fnTestData = ""
-        self.fnEvaluationResult = ""
-
-        # == train data for sampling (ratings=5.0)
-        self.indexUserTrainPurchase = []
-        self.indexItemTrainPurchase = []
-
-        # == train data for sampling (ratings<5.0)
-        self.indexUserTrainClick = []
-        self.indexItemTrainClick = []
-
-        self.userRatingNumTrain = []
-        self.itemRatingNumTrain = []
-
-    def readConfigurations(self):
         print('===================== 读取参数 ====================')
         print("d: " + str(self.args.d))
         print("alpha_u: " + str(self.args.alpha_u))
@@ -84,7 +61,39 @@ class HoToR_mod:
         self.biasV = np.zeros(self.args.m + 1)
 
     def readData(self):
-        pass
+        print("==================== 正在读取数据 ====================")
+        self.userRatingNumTrain = np.zeros(self.args.n + 1)
+        self.itemRatingNumTrain = np.zeros(self.args.m + 1)
+
+        with open(self.args.fnTrainData) as csvfile:
+            reader = csv.reader(csvfile, delimiter=' ')
+
+            for row in tqdm(reader):
+                # 读取数据
+                userID = int(row[0])
+                itemID = int(row[1])
+                rating = float(row[2])
+                # print(userID, itemID, rating)
+
+                # 统计每个用户、物品的个数
+                self.userRatingNumTrain[userID] += 1
+                self.itemRatingNumTrain[itemID] += 1
+
+                # 总训练集大小
+                self.num_train += 1
+                # 评分非5分 训练集数量
+                if rating < 5.0:
+                    self.num_train_notFive += 1
+
+                # 统计训练集 数据结构如下：
+                # TrainData = {userID1: {itemID1:rating1, itemID2:rating2}, userId2: {...}, ...}
+                self.ItemTrainingSet.add(itemID)
+                if userID in self.TrainData.keys():
+                    itemRatingSet = self.TrainData[userID]
+                else:
+                    itemRatingSet = {}
+                itemRatingSet[itemID] = rating
+                self.TrainData[userID] = itemRatingSet
 
     def initialization(self):
         pass
@@ -95,7 +104,11 @@ class HoToR_mod:
     def test(self):
         pass
 
+    def main(self):
+        self.readConfigurations()
+        self.readData()
+
 
 if __name__ == '__main__':
     model = HoToR_mod()
-    model.readConfigurations()
+    model.main()

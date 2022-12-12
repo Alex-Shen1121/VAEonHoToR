@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 class HoToR_mod:
     def __init__(self):
+        self.TestData = dict()
         self.indexItemTrainPurchase = None
         self.indexUserTrainPurchase = None
         self.indexItemTrainClick = None
@@ -69,6 +70,7 @@ class HoToR_mod:
         self.userRatingNumTrain = np.zeros(self.args.n + 1)
         self.itemRatingNumTrain = np.zeros(self.args.m + 1)
 
+        # 读取训练集
         with open(self.args.fnTrainData) as csvfile:
             reader = csv.reader(csvfile, delimiter=' ')
 
@@ -89,9 +91,10 @@ class HoToR_mod:
                 if rating < 5.0:
                     self.num_train_notFive += 1
 
+                self.ItemTrainingSet.add(itemID)
+
                 # 统计训练集 数据结构如下：
                 # TrainData = {userID1: {itemID1:rating1, itemID2:rating2}, userId2: {...}, ...}
-                self.ItemTrainingSet.add(itemID)
                 if userID in self.TrainData.keys():
                     itemRatingSet = self.TrainData[userID]
                 else:
@@ -122,6 +125,24 @@ class HoToR_mod:
                     self.indexUserTrainPurchase[idx5] = u
                     self.indexItemTrainPurchase[idx5] = i
                     idx5 += 1
+
+        # 读取测试集
+        with open(self.args.fnTestData) as csvfile:
+            reader = csv.reader(csvfile, delimiter=' ')
+
+            for row in tqdm(reader):
+                # 读取数据
+                userID = int(row[0])
+                itemID = int(row[1])
+
+                # 统计测试集 数据结构如下：
+                # TestData = {userID1: set(itemID1, itemID2, ....), userId2: set(...)}
+                if userID in self.TestData.keys():
+                    itemSet = self.TestData[userID]
+                else:
+                    itemSet = set()
+                itemSet.add(itemID)
+                self.TrainData[userID] = itemSet
 
     def initialization(self):
         pass

@@ -1,4 +1,5 @@
 import csv
+import math
 import random
 
 import numpy as np
@@ -41,8 +42,8 @@ class HoToR_mod:
                                                                '.ExplicitPositive4Ranking.copy1.explicit')
         parser.add_argument('--fnTestData', type=str, default='../dataset/ML10M-ExplicitPositive4Ranking/ML10M'
                                                               '.ExplicitPositive4Ranking.copy1.test')
-        parser.add_argument('--fnEvaluationResult', type=str,
-                            default='HoToR_mod_ML10M_TEST_copy1_lambda040_0001_1000.txt')
+        parser.add_argument('--fnEvaluationResult', type=str, default='../dataset/ML10M-ExplicitPositive4Ranking'
+                                                                      '/HoToR_mod_ML10M_TEST_copy1_lambda040_0001_1000.txt')
         parser.add_argument('--lambda_mod', type=int, default=0.4)
         self.args = parser.parse_args()
 
@@ -142,7 +143,7 @@ class HoToR_mod:
                 else:
                     itemSet = set()
                 itemSet.add(itemID)
-                self.TrainData[userID] = itemSet
+                self.TestData[userID] = itemSet
 
     def initialization(self):
         print("==================== 统计量初始化 ====================")
@@ -168,11 +169,68 @@ class HoToR_mod:
             for k in range(self.args.d):
                 self.U[i][k] = (random.random() - 0.5) * 0.01
 
-        pass
-
     def HoToR_mod_training(self):
-        print("==================== 正在读取数据 ====================")
-        pass
+        print("==================== 正在训练模型 ====================")
+        for iter in tqdm(range(self.args.num_iterations)):
+            # print("===================== iter" + str(iter + 1) + " ===================")
+            for iter2 in range(self.num_train):
+
+                # 随机采样样本
+                randomNum = random.random()
+                if randomNum < self.args.lambda_mod:
+                    # 从浏览记录中随机采样(u, i, r_ui)数据
+                    idx = int(math.floor(random.random() * self.num_train_notFive))
+                    u = int(self.indexUserTrainClick[idx])
+                    i = int(self.indexItemTrainClick[idx])
+                    r_ui = self.TrainData.get(u).get(i)
+
+                    # todo: 不理解为什么
+                    if r_ui == 0:
+                        r_ui = 3
+
+                    # 计算(u, i)权重
+                    barr_ui = (2 ** r_ui - 1) / (2 ** 5)
+
+                    # 随机采样一个物品j（未浏览）
+                    tmp = self.TrainData.get(u)
+                    while True:
+                        j = int(math.floor(random.random() * self.args.m)) + 1
+                        if j in self.ItemTrainingSet and j not in tmp.keys():
+                            break
+                else:
+                    # 从购买记录中随机采样(u, i, r_ui)数据 r_ui = 5
+                    idx = int(math.floor(random.random() * self.num_train - self.num_train_notFive))
+                    u = int(self.indexUserTrainClick[idx])
+                    i = int(self.indexItemTrainClick[idx])
+                    barr_ui = 1
+
+                    # 随机采样一个物品j（未购买）
+                    tmp = self.TrainData.get(u)
+                    while True:
+                        j = int(math.floor(random.random() * self.args.m)) + 1
+                        if j in self.ItemTrainingSet and (j not in tmp.keys() or tmp.get(j) != 5):
+                            break
+
+                # 计算损失函数
+                r_uij = np.dot(self.U[u], self.V[i]) + self.biasV[i] - \
+                        np.dot(self.U[u], self.V[j]) + self.biasV[j]
+                loss_uij = -1 / (1 + math.exp(r_uij))
+
+                # 更新梯度
+                grad_Uuk = loss_uij * (self.V[i] - self.V[j]) + self.args.alpha_u * self.U[u]
+                grad_Vik = loss_uij * self.U[u] + self.args.alpha_v * self.V[i]
+                grad_Vjk = loss_uij * (-self.U[u]) + self.args.alpha_v * self.V[j]
+
+                # Update parameters using vectorized operations
+                self.U[u] = self.U[u] - self.args.gamma * grad_Uuk * barr_ui
+                self.V[i] = self.V[i] - self.args.gamma * grad_Vik * barr_ui
+                self.V[j] = self.V[j] - self.args.gamma * grad_Vjk * barr_ui
+
+                # Update bias terms
+                grad_bi = loss_uij + self.args.beta_v * self.biasV[i]
+                grad_bj = loss_uij * (-1) + self.args.beta_v * self.biasV[j]
+                self.biasV[i] = self.biasV[i] - self.args.gamma * grad_bi * barr_ui
+                self.biasV[j] = self.biasV[j] - self.args.gamma * grad_bj * barr_ui
 
     def test(self):
         print("==================== 正在读取数据 ====================")
@@ -182,6 +240,7 @@ class HoToR_mod:
         self.readConfigurations()
         self.readData()
         self.initialization()
+        self.HoToR_mod_training()
 
 
 if __name__ == '__main__':

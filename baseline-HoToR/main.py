@@ -1,10 +1,28 @@
 import csv
+import heapq
 import math
 import random
 
 import numpy as np
 import argparse
 from tqdm import tqdm
+
+
+class TopKHeap:
+    def __init__(self, k):
+        self.k = k
+        self.data = []
+
+    def push(self, elem):
+        if len(self.data) < self.k:
+            heapq.heappush(self.data, elem)
+        else:
+            topk_small = self.data[0]
+            if elem > topk_small:
+                heapq.heapreplace(self.data, elem)
+
+    def topk(self):
+        return [x for x in reversed([heapq.heappop(self.data) for x in range(len(self.data))])]
 
 
 class HoToR_mod:
@@ -32,8 +50,8 @@ class HoToR_mod:
         parser.add_argument('--d', type=int, default=100)
         parser.add_argument('--alpha_u', type=float, default=1e-3)
         parser.add_argument('--alpha_v', type=float, default=1e-3)
-        parser.add_argument('--beta_v', type=int, default=1e-3)
-        parser.add_argument('--gamma', type=int, default=1e-2)
+        parser.add_argument('--beta_v', type=float, default=1e-3)
+        parser.add_argument('--gamma', type=float, default=1e-2)
         parser.add_argument('--n', type=int, default=71567)
         parser.add_argument('--m', type=int, default=10681)
         parser.add_argument('--num_iterations', type=int, default=1000)
@@ -44,7 +62,7 @@ class HoToR_mod:
                                                               '.ExplicitPositive4Ranking.copy1.test')
         parser.add_argument('--fnEvaluationResult', type=str, default='../dataset/ML10M-ExplicitPositive4Ranking'
                                                                       '/HoToR_mod_ML10M_TEST_copy1_lambda040_0001_1000.txt')
-        parser.add_argument('--lambda_mod', type=int, default=0.4)
+        parser.add_argument('--lambda_mod', type=float, default=0.4)
         self.args = parser.parse_args()
 
         print('===================== 读取参数 ====================')
@@ -172,6 +190,8 @@ class HoToR_mod:
     def HoToR_mod_training(self):
         print("==================== 正在训练模型 ====================")
         for iter in tqdm(range(self.args.num_iterations)):
+            if iter % 100 == 0:
+                self.test()
             # print("===================== iter" + str(iter + 1) + " ===================")
             for iter2 in range(self.num_train):
 
@@ -232,12 +252,34 @@ class HoToR_mod:
                 self.biasV[i] = self.biasV[i] - self.args.gamma * grad_bi * barr_ui
                 self.biasV[j] = self.biasV[j] - self.args.gamma * grad_bj * barr_ui
 
-                if iter % 10 == 0:
-                    self.test()
 
     def test(self):
-        print("==================== 正在读取数据 ====================")
-        pass
+        # print("==================== 正在评估数据 ====================")
+        UserNum_TestData = 0
+        for u in range(1, self.args.n + 1):
+            if u not in self.TrainData.keys() or u not in self.TestData.keys():
+                continue
+            UserNum_TestData += 1
+
+            # 获取用户u的购买记录（测试集）
+            ItemSet_u_TestData = self.TestData.get(u)
+            ItemNum_u_TestData = len(ItemSet_u_TestData)
+
+            # 对每个物品进行评分预测
+            # 取评分预测最高的TopK
+            item2Prediction = TopKHeap(self.args.topK)
+            for i in range(1, self.args.m + 1):
+                if i not in self.ItemTrainingSet or i in self.TrainData.get(u):
+                    continue
+                pred = np.dot(self.U[u], self.V[i]) + self.biasV[i]
+
+                item2Prediction.push([pred, i])
+            res = item2Prediction.topk()
+            TopKResult = [x[1] for x in res]
+
+            # 指标评估
+
+
 
     def main(self):
         self.readConfigurations()

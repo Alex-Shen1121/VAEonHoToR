@@ -232,6 +232,9 @@ class HoToR_mod:
                 self.biasV[i] = self.biasV[i] - self.args.gamma * grad_bi * barr_ui
                 self.biasV[j] = self.biasV[j] - self.args.gamma * grad_bj * barr_ui
 
+                if iter % 10 == 0:
+                    self.test()
+
     def test(self):
         print("==================== 正在读取数据 ====================")
         pass

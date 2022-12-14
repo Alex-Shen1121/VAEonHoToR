@@ -192,7 +192,7 @@ class HoToR_mod:
         for iter in range(self.args.num_iterations):
             if iter % 50 == 0:
                 self.test()
-            if iter % 10 == 0:
+            if iter % 5 == 0:
                 print("===================== iter" + str(iter) + " ===================")
             for iter2 in range(self.num_train):
 
@@ -233,8 +233,8 @@ class HoToR_mod:
                             break
 
                 # 计算损失函数
-                r_uij = np.dot(self.U[u], self.V[i]) + self.biasV[i] - \
-                        np.dot(self.U[u], self.V[j]) + self.biasV[j]
+                r_uij = (np.dot(self.U[u], self.V[i]) + self.biasV[i]) - \
+                        (np.dot(self.U[u], self.V[j]) + self.biasV[j])
                 loss_uij = -1 / (1 + math.exp(r_uij))
 
                 # 更新梯度

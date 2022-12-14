@@ -189,10 +189,11 @@ class HoToR_mod:
 
     def HoToR_mod_training(self):
         print("==================== 正在训练模型 ====================")
-        for iter in tqdm(range(self.args.num_iterations)):
-            if iter % 100 == 0:
+        for iter in range(self.args.num_iterations):
+            if iter % 50 == 0:
                 self.test()
-            # print("===================== iter" + str(iter + 1) + " ===================")
+            if iter % 10 == 0:
+                print("===================== iter" + str(iter) + " ===================")
             for iter2 in range(self.num_train):
 
                 # 随机采样样本
@@ -252,9 +253,19 @@ class HoToR_mod:
                 self.biasV[i] = self.biasV[i] - self.args.gamma * grad_bi * barr_ui
                 self.biasV[j] = self.biasV[j] - self.args.gamma * grad_bj * barr_ui
 
-
     def test(self):
         # print("==================== 正在评估数据 ====================")
+        DCGbest = [0] * (self.args.topK + 1)
+        PrecisionSum = [0] * (self.args.topK + 1)
+        RecallSum = [0] * (self.args.topK + 1)
+        F1Sum = [0] * (self.args.topK + 1)
+        NDCGSum = [0] * (self.args.topK + 1)
+        OneCallSum = [0] * (self.args.topK + 1)
+
+        for k in range(1, self.args.topK + 1):
+            DCGbest[k] = DCGbest[k - 1]
+            DCGbest[k] += 1 / math.log(k + 1)
+
         UserNum_TestData = 0
         for u in range(1, self.args.n + 1):
             if u not in self.TrainData.keys() or u not in self.TestData.keys():
@@ -278,8 +289,42 @@ class HoToR_mod:
             TopKResult = [x[1] for x in res]
 
             # 指标评估
+            DCG, DCGbest2 = [0] * (self.args.topK + 1), [0] * (self.args.topK + 1)
+            HitSum = 0
+            for k in range(1, self.args.topK + 1):
+                DCG[k] = DCG[k - 1]
+                if TopKResult[k - 1] in ItemSet_u_TestData:
+                    HitSum += 1
+                    DCG[k] += 1 / math.log(k + 1)
 
+                prec = HitSum / k
+                rec = HitSum / ItemNum_u_TestData
+                F1 = 2 * prec * rec / (prec + rec) \
+                    if prec + rec > 0 else 0
 
+                PrecisionSum[k] += prec
+                RecallSum[k] += rec
+                F1Sum[k] += F1
+
+                DCGbest2[k] = DCGbest[k] \
+                    if len(ItemSet_u_TestData) >= k \
+                    else DCGbest2[k - 1]
+
+                NDCGSum[k] += DCG[k] / DCGbest2[k]
+                OneCallSum[k] += 1 if HitSum > 0 else 0
+
+                pass
+
+        for k in range(5, self.args.topK + 1, 5):
+            print(f'Prec@{k}: {PrecisionSum[k] / UserNum_TestData}')
+        for k in range(5, self.args.topK + 1, 5):
+            print(f'Rec@{k}: {RecallSum[k] / UserNum_TestData}')
+        for k in range(5, self.args.topK + 1, 5):
+            print(f'F1@{k}: {F1Sum[k] / UserNum_TestData}')
+        for k in range(5, self.args.topK + 1, 5):
+            print(f'NDCG@{k}: {NDCGSum[k] / UserNum_TestData}')
+        for k in range(5, self.args.topK + 1, 5):
+            print(f'1-call@{k}: {OneCallSum[k] / UserNum_TestData}')
 
     def main(self):
         self.readConfigurations()

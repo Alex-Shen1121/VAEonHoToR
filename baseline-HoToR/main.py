@@ -189,11 +189,11 @@ class HoToR_mod:
 
     def HoToR_mod_training(self):
         print("==================== 正在训练模型 ====================")
-        for iter in range(self.args.num_iterations):
+        for iter in tqdm(range(self.args.num_iterations)):
             if iter % 50 == 0:
                 self.test()
-            if iter % 5 == 0:
-                print("===================== iter" + str(iter) + " ===================")
+            # if iter % 5 == 0:
+            #     print("===================== iter" + str(iter) + " ===================")
             for iter2 in range(self.num_train):
 
                 # 随机采样样本
@@ -220,9 +220,9 @@ class HoToR_mod:
                             break
                 else:
                     # 从购买记录中随机采样(u, i, r_ui)数据 r_ui = 5
-                    idx = int(math.floor(random.random() * self.num_train - self.num_train_notFive))
-                    u = int(self.indexUserTrainClick[idx])
-                    i = int(self.indexItemTrainClick[idx])
+                    idx = int(math.floor(random.random() * (self.num_train - self.num_train_notFive)))
+                    u = int(self.indexUserTrainPurchase[idx])
+                    i = int(self.indexItemTrainPurchase[idx])
                     barr_ui = 1
 
                     # 随机采样一个物品j（未购买）
@@ -233,8 +233,7 @@ class HoToR_mod:
                             break
 
                 # 计算损失函数
-                r_uij = (np.dot(self.U[u], self.V[i]) + self.biasV[i]) - \
-                        (np.dot(self.U[u], self.V[j]) + self.biasV[j])
+                r_uij = (np.dot(self.U[u], self.V[i]) + self.biasV[i]) - (np.dot(self.U[u], self.V[j]) + self.biasV[j])
                 loss_uij = -1 / (1 + math.exp(r_uij))
 
                 # 更新梯度
@@ -312,8 +311,6 @@ class HoToR_mod:
 
                 NDCGSum[k] += DCG[k] / DCGbest2[k]
                 OneCallSum[k] += 1 if HitSum > 0 else 0
-
-                pass
 
         for k in range(5, self.args.topK + 1, 5):
             print(f'Prec@{k}: {PrecisionSum[k] / UserNum_TestData}')

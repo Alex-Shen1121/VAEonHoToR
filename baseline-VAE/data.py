@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     print("Load and Preprocess Movielens-20m dataset")
     # Load Data
-    DATA_DIR = 'ml-20m/'
+    DATA_DIR = '../ml-20m/'
     raw_data = pd.read_csv(os.path.join(DATA_DIR, 'ratings.csv'), header=0)
     raw_data = raw_data[raw_data['rating'] > 3.5]
 

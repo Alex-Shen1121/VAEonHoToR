@@ -174,7 +174,7 @@ class HoToR_mod:
     def HoToR_mod_training(self):
         print("==================== 正在训练模型 ====================")
         for iter in tqdm(range(self.args.num_iterations)):
-            if iter % 50 == 0:
+            if iter % 50 == 10:
                 self.test()
             # if iter % 5 == 0:
             #     print("===================== iter" + str(iter) + " ===================")

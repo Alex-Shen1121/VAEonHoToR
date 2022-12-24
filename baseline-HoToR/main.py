@@ -6,7 +6,8 @@ import random
 import numpy as np
 import argparse
 from tqdm import tqdm
-import TopKHeap
+from TopKHeap import TopKHeap
+
 
 class HoToR_mod:
     def __init__(self):

@@ -76,11 +76,14 @@ def get_count(tp, id):
 def filter_triplets(tp, min_uc=5, min_sc=0):
     if min_sc > 0:
         itemcount = get_count(tp, 'movieId')
-        tp = tp[tp['movieId'].isin(itemcount.index[itemcount['size'] >= min_sc])]
+        # todo: 不知道有什么用
+        # tp = tp[tp['movieId'].isin(itemcount.index[itemcount['size'] >= min_sc])]
 
     if min_uc > 0:
+        # 根据userId进行groupby，筛选出userID-size（userid有size个4分以上评分记录）
         usercount = get_count(tp, 'userId')
-        tp = tp[tp['userId'].isin(usercount.index[usercount['size'] >= min_uc])]
+        # todo: 感觉写的不太对
+        # tp = tp[tp['userId'].isin(usercount.index[usercount['size'] >= min_uc])]
 
     usercount, itemcount = get_count(tp, 'userId'), get_count(tp, 'movieId')
     return tp, usercount, itemcount
@@ -95,6 +98,7 @@ def split_train_test_proportion(data, test_prop=0.2):
     for _, group in data_grouped_by_user:
         n_items_u = len(group)
 
+        # 如果用户数据量大于5条，则随机选择20%的数据归入te,其余归入tr
         if n_items_u >= 5:
             idx = np.zeros(n_items_u, dtype='bool')
             idx[np.random.choice(n_items_u, size=int(test_prop * n_items_u), replace=False).astype('int64')] = True
@@ -102,6 +106,7 @@ def split_train_test_proportion(data, test_prop=0.2):
             tr_list.append(group[np.logical_not(idx)])
             te_list.append(group[idx])
 
+        # 用户数据少于5条 插入tr_list
         else:
             tr_list.append(group)
 
@@ -119,25 +124,34 @@ def numerize(tp, profile2id, show2id):
 
 if __name__ == '__main__':
 
-    print("Load and Preprocess Movielens-20m dataset")
-    # Load Data
-    DATA_DIR = '../ml-20m/'
-    raw_data = pd.read_csv(os.path.join(DATA_DIR, 'ratings.csv'), header=0)
+    print("Load and Preprocess BookCrossing dataset")
+    # 读取数据
+    DATA_DIR = '../dataset/BookCrossing-Rating2Ranking'
+    raw_data = pd.read_csv(os.path.join(DATA_DIR, 'copy1.train'), header=None, delimiter=' ')
+    raw_data.columns = ['userId', 'movieId', 'rating']
+    # 保留4分及4分以上的数据
     raw_data = raw_data[raw_data['rating'] > 3.5]
 
-    # Filter Data
+    # 过滤数据
+    # 统计每个用户、电影的出现频率
+    # 只保留被用户点击了5次以上的物品
     raw_data, user_activity, item_popularity = filter_triplets(raw_data)
 
-    # Shuffle User Indices
+    sparsity = 1. * raw_data.shape[0] / (user_activity.shape[0] * item_popularity.shape[0])
+
+    print("After filtering, there are %d watching events from %d users and %d movies (sparsity: %.3f%%)" %
+          (raw_data.shape[0], user_activity.shape[0], item_popularity.shape[0], sparsity * 100))
+
+    # 打乱用户顺序
     unique_uid = user_activity.index
     np.random.seed(98765)
     idx_perm = np.random.permutation(unique_uid.size)
     unique_uid = unique_uid[idx_perm]
 
     n_users = unique_uid.size
-    n_heldout_users = 10000
+    n_heldout_users = int(n_users * 0.1)
 
-    # Split Train/Validation/Test User Indices
+    # 拆分 Train/Validation/Test 用户
     tr_users = unique_uid[:(n_users - n_heldout_users * 2)]
     vd_users = unique_uid[(n_users - n_heldout_users * 2): (n_users - n_heldout_users)]
     te_users = unique_uid[(n_users - n_heldout_users):]
@@ -157,16 +171,26 @@ if __name__ == '__main__':
         for sid in unique_sid:
             f.write('%s\n' % sid)
 
+    # 筛选出在训练集中出现过的物品的数据 作为验证集数据
+    # ToDo: 不考虑冷启动的问题
     vad_plays = raw_data.loc[raw_data['userId'].isin(vd_users)]
     vad_plays = vad_plays.loc[vad_plays['movieId'].isin(unique_sid)]
 
+    # 验证集上进行拆分:
+    # 1. 如果用户数据量小于5条，直接归入vad_tr
+    # 2. 如果用户数据量大于5条，则随机选择20%的数据归入vad_te,其余归入vad_tr
     vad_plays_tr, vad_plays_te = split_train_test_proportion(vad_plays)
 
+    # 筛选出在训练集中出现过的物品的数据 作为测试集数据
     test_plays = raw_data.loc[raw_data['userId'].isin(te_users)]
     test_plays = test_plays.loc[test_plays['movieId'].isin(unique_sid)]
 
+    # 测试集上进行拆分:
+    # 1. 如果用户数据量小于5条，直接归入test_tr
+    # 2. 如果用户数据量大于5条，则随机选择20%的数据归入test_te,其余归入test_tr
     test_plays_tr, test_plays_te = split_train_test_proportion(test_plays)
 
+    # 所有数据重新编号（根据profile2id和show2id）
     train_data = numerize(train_plays, profile2id, show2id)
     train_data.to_csv(os.path.join(pro_dir, 'train.csv'), index=False)
 

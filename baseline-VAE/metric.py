@@ -1,6 +1,9 @@
 import bottleneck as bn
 import numpy as np
+
 np.seterr(divide='ignore', invalid='ignore')
+
+
 def NDCG_binary_at_k_batch(X_pred, heldout_batch, k=100):
     '''
     Normalized Discounted Cumulative Gain@k for binary relevance
@@ -8,8 +11,7 @@ def NDCG_binary_at_k_batch(X_pred, heldout_batch, k=100):
     '''
     batch_users = X_pred.shape[0]
     idx_topk_part = bn.argpartition(-X_pred, k, axis=1)
-    topk_part = X_pred[np.arange(batch_users)[:, np.newaxis],
-                       idx_topk_part[:, :k]]
+    topk_part = X_pred[np.arange(batch_users)[:, np.newaxis], idx_topk_part[:, :k]]
     idx_part = np.argsort(-topk_part, axis=1)
 
     idx_topk = idx_topk_part[np.arange(batch_users)[:, np.newaxis], idx_part]
@@ -17,7 +19,7 @@ def NDCG_binary_at_k_batch(X_pred, heldout_batch, k=100):
     tp = 1. / np.log2(np.arange(2, k + 2))
 
     DCG = (heldout_batch[np.arange(batch_users)[:, np.newaxis],
-                         idx_topk].toarray() * tp).sum(axis=1)
+    idx_topk].toarray() * tp).sum(axis=1)
     IDCG = np.array([(tp[:min(n, k)]).sum()
                      for n in heldout_batch.getnnz(axis=1)])
     return DCG / IDCG

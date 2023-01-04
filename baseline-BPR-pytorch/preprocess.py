@@ -31,7 +31,7 @@ class MovieLens1M(DatasetLoader):
                          engine='python',
                          names=['user', 'item', 'rate', 'time'])
         # todo: 是否需要删除4分以下的物品？无法复现P5@0.38的精度
-        df = df[df['rate'] >= 4].reset_index()
+        df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 
@@ -46,7 +46,7 @@ class MovieLens20M(DatasetLoader):
                          usecols=['user', 'item', 'time'],
                          skiprows=1)
         # todo: 是否需要删除4分以下的物品？
-        df = df[df['rate'] >= 4].reset_index()
+        df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 
@@ -61,7 +61,7 @@ class MovieLens100K(DatasetLoader):
                          usecols=['user', 'item', 'rate', 'time'],
                          skiprows=1)
         # todo: 是否需要删除4分以下的物品？
-        df = df[df['rate'] >= 4].reset_index()
+        df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 

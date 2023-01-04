@@ -1,3 +1,5 @@
+from datetime import datetime
+import socket
 import os
 import random
 import pickle
@@ -191,8 +193,11 @@ def main(args):
     dataset = TripletUniformPair(item_size, train_user_list, train_pair, True, args.n_epochs)
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.worker_count, drop_last=True)
     model = BPR(user_size, item_size, args.dim, args.weight_decay).to(args.device)
-    optimizer = optim.Adam(model.parameters(), lr=args.lr,weight_decay=1e-4)
-    writer = SummaryWriter()
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    writer = SummaryWriter(
+        log_dir=os.path.join("runs", f'{args.dataset}',
+                             datetime.now().strftime("%b%d_%H-%M-%S") + "_" + socket.gethostname())
+    )
 
     # Training
     smooth_loss = 0
@@ -261,6 +266,10 @@ def eval(epoch, idx, loss, model, start_time, test_user_list, train_user_list, w
 if __name__ == '__main__':
     # Parse argument
     parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset',
+                        type=str,
+                        default="ml-1m",
+                        help="Proceeding Dataset")
     parser.add_argument('--data',
                         type=str,
                         default=os.path.join('preprocessed', 'ml-1m.pickle'),

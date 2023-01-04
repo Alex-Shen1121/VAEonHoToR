@@ -1,3 +1,5 @@
 /dataset/
 /ml-20m/
 /baseline-VAE/models.pt
+/data/
+*/runs/

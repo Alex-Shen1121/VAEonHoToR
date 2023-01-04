@@ -1,0 +1,1 @@
+python preprocess.py --dataset ml-1m --data_dir ../data/ml-1m --output_data ./preprocessed/ml-1m.pickle

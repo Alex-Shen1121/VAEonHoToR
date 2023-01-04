@@ -2,4 +2,7 @@
 /ml-20m/
 /baseline-VAE/models.pt
 /data/
-*/runs/
+/baseline-BPR-pytorch/runs/
+/baseline-VAE/runs/
+/data-analyze/
+/preprocessed/

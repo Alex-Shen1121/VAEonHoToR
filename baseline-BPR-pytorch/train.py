@@ -191,7 +191,7 @@ def main(args):
     dataset = TripletUniformPair(item_size, train_user_list, train_pair, True, args.n_epochs)
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.worker_count, drop_last=True)
     model = BPR(user_size, item_size, args.dim, args.weight_decay).to(args.device)
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr,weight_decay=1e-4)
     writer = SummaryWriter()
 
     # Training
@@ -268,21 +268,21 @@ if __name__ == '__main__':
     # Seed
     parser.add_argument('--seed',
                         type=int,
-                        default=0,
+                        default=random.randint(0, 1000),
                         help="Seed (For reproducability)")
     # Model
     parser.add_argument('--dim',
                         type=int,
-                        default=4,
+                        default=20,
                         help="Dimension for embedding")
     # Optimizer
     parser.add_argument('--lr',
                         type=float,
-                        default=1e-3,
+                        default=0.001,
                         help="Learning rate")
     parser.add_argument('--weight_decay',
                         type=float,
-                        default=0.025,
+                        default=0.01,
                         help="Weight decay factor")
     # Training
     parser.add_argument('--n_epochs',

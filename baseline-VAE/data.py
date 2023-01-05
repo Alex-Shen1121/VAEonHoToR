@@ -124,7 +124,7 @@ def numerize(tp, profile2id, show2id):
 
 if __name__ == '__main__':
 
-    print("Load and Preprocess BookCrossing dataset")
+    print("Load and Preprocess ML10M dataset")
     # 读取数据
     DATA_DIR = '../dataset/ML10M-ExplicitPositive4Ranking'
     raw_data = pd.read_csv(os.path.join(DATA_DIR, 'ML10M.ExplicitPositive4Ranking.copy1.explicit'), header=None, delimiter=' ')

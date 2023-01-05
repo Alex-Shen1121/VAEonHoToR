@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding=utf-8
 import os
 import gzip
 import json
@@ -110,10 +112,11 @@ def split_train_test(df, user_size, test_size=0.2, time_order=False):
 
 
 def create_pair(user_list):
-    pair = []
+    click_pair, buy_pair = [],[]
     for user, item_list in enumerate(user_list):
-        pair.extend([(user, *item) for item in item_list])
-    return pair
+        for item, rate in item_list:
+            click_pair.append((user, item, rate)) if rate < 5 else buy_pair.append((user, item, rate))
+    return click_pair, buy_pair
 
 
 def main(args):
@@ -138,13 +141,13 @@ def main(args):
                                                        time_order=args.time_order)
     print('Complete spliting items for training and testing')
 
-    train_pair = create_pair(train_user_list)
+    click_train_pair, buy_train_pair = create_pair(train_user_list)
     print('Complete creating pair')
 
     dataset = {'user_size': user_size, 'item_size': item_size,
                'user_mapping': user_mapping, 'item_mapping': item_mapping,
                'train_user_list': train_user_list, 'test_user_list': test_user_list,
-               'train_pair': train_pair}
+               'click_train_pair': click_train_pair, 'buy_train_pair': buy_train_pair}
     dirname = os.path.dirname(os.path.abspath(args.output_data))
     os.makedirs(dirname, exist_ok=True)
     with open(args.output_data, 'wb') as f:

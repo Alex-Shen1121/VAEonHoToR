@@ -72,7 +72,7 @@ class TripletUniformPair(IterableDataset):
         return u, i, j
 
 
-def precision_and_recall_k(user_emb, item_emb, train_user_list, test_user_list, klist, batch=512):
+def precision_and_recall_k(user_emb, item_emb, bias_emb, train_user_list, test_user_list, klist, batch=512):
     """Compute precision at k using GPU.
 
     Args:
@@ -98,7 +98,7 @@ def precision_and_recall_k(user_emb, item_emb, train_user_list, test_user_list, 
             mask[j].scatter_(dim=0, index=torch.tensor(list(train_user_list[i + j]), device=args.device),
                              value=torch.tensor(0.0, device=args.device))
         # Calculate prediction value
-        cur_result = torch.mm(user_emb[i:i + min(batch, user_emb.shape[0] - i), :], item_emb.t())
+        cur_result = torch.mm(user_emb[i:i + min(batch, user_emb.shape[0] - i), :], item_emb.t()) + bias_emb.t()
         cur_result = torch.sigmoid(cur_result)
         assert not torch.any(torch.isnan(cur_result))
         # Make zero for already observed item
@@ -185,6 +185,7 @@ def main(args):
 def eval(epoch, idx, loss, model, start_time, test_user_list, train_user_list, writer):
     plist, rlist = precision_and_recall_k(model.U.detach(),
                                           model.V.detach(),
+                                          model.biasV.detach(),
                                           train_user_list,
                                           test_user_list,
                                           klist=[1, 5, 10])

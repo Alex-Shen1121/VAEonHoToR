@@ -31,7 +31,8 @@ class MovieLens1M(DatasetLoader):
                          engine='python',
                          names=['user', 'item', 'rate', 'time'])
         # todo: 是否需要删除4分以下的物品？无法复现P5@0.38的精度
-        df = df[df['rate'] >= 4].reset_index(drop=True)
+        if args.removeRateUnderFour:
+            df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 
@@ -45,8 +46,8 @@ class MovieLens20M(DatasetLoader):
                          names=['user', 'item', 'rate', 'time'],
                          usecols=['user', 'item', 'time'],
                          skiprows=1)
-        # todo: 是否需要删除4分以下的物品？
-        df = df[df['rate'] >= 4].reset_index(drop=True)
+        if args.removeRateUnderFour:
+            df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 
@@ -60,8 +61,8 @@ class MovieLens100K(DatasetLoader):
                          names=['user', 'item', 'rate', 'time'],
                          usecols=['user', 'item', 'rate', 'time'],
                          skiprows=1)
-        # todo: 是否需要删除4分以下的物品？
-        df = df[df['rate'] >= 4].reset_index(drop=True)
+        if args.removeRateUnderFour:
+            df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 
@@ -166,6 +167,10 @@ if __name__ == '__main__':
                         type=str,
                         default=os.path.join('preprocessed', 'ml-1m.pickle'),
                         help="File path for preprocessed data")
+    parser.add_argument('--removeRateUnderFour',
+                        type=bool,
+                        default=False,
+                        help="Remove Set (rate under 4)s")
     parser.add_argument('--test_size',
                         type=float,
                         default=0.2,

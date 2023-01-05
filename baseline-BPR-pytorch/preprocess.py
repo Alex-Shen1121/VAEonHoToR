@@ -31,8 +31,6 @@ class MovieLens1M(DatasetLoader):
                          engine='python',
                          names=['user', 'item', 'rate', 'time'])
         # todo: 是否需要删除4分以下的物品？无法复现P5@0.38的精度
-        if args.removeRateUnderFour:
-            df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 
@@ -46,8 +44,6 @@ class MovieLens20M(DatasetLoader):
                          names=['user', 'item', 'rate', 'time'],
                          usecols=['user', 'item', 'time'],
                          skiprows=1)
-        if args.removeRateUnderFour:
-            df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 
@@ -61,8 +57,6 @@ class MovieLens100K(DatasetLoader):
                          names=['user', 'item', 'rate', 'time'],
                          usecols=['user', 'item', 'rate', 'time'],
                          skiprows=1)
-        if args.removeRateUnderFour:
-            df = df[df['rate'] >= 4].reset_index(drop=True)
         return df
 
 
@@ -91,6 +85,11 @@ def split_train_test(df, user_size, test_size=0.2, time_order=False):
         train_idx = list(set(range(len(df))) - set(test_idx))
         test_df = df.loc[test_idx].reset_index(drop=True)
         train_df = df.loc[train_idx].reset_index(drop=True)
+        # 区分训练集是否保留小于4分的数据
+        if args.removeRateUnderFour == "True":
+            train_df = train_df[train_df['rate'] >= 4].reset_index(drop=True)
+        # 测试集只取4/5分为推荐目标
+        test_df = test_df[test_df['rate'] >= 4].reset_index(drop=True)
         test_user_list = create_user_list(test_df, user_size)
         train_user_list = create_user_list(train_df, user_size)
     else:
@@ -168,8 +167,8 @@ if __name__ == '__main__':
                         default=os.path.join('preprocessed', 'ml-1m.pickle'),
                         help="File path for preprocessed data")
     parser.add_argument('--removeRateUnderFour',
-                        type=bool,
-                        default=False,
+                        type=str,
+                        default="False",
                         help="Remove Set (rate under 4)s")
     parser.add_argument('--test_size',
                         type=float,

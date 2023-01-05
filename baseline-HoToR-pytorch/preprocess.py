@@ -56,7 +56,7 @@ class MovieLens100K(DatasetLoader):
         df = pd.read_csv(self.fpath,
                          sep='\t',
                          names=['user', 'item', 'rate', 'time'],
-                         usecols=['user', 'item', 'time'],
+                         usecols=['user', 'item', 'rate', 'time'],
                          skiprows=1)
         return df
 
@@ -87,7 +87,7 @@ def split_train_test(df, user_size, test_size=0.2, time_order=False):
         test_df = df.loc[test_idx].reset_index(drop=True)
         train_df = df.loc[train_idx].reset_index(drop=True)
         # 测试集只取4/5分为推荐目标
-        test_df = test_df[test_df['rate'] >= 4].reset_index()
+        test_df = test_df[test_df['rate'] >= 4].reset_index(drop=True)
         test_user_list = create_user_list(test_df, user_size)
         train_user_list = create_user_list(train_df, user_size)
     else:
@@ -112,7 +112,7 @@ def split_train_test(df, user_size, test_size=0.2, time_order=False):
 
 
 def create_pair(user_list):
-    click_pair, buy_pair = [],[]
+    click_pair, buy_pair = [], []
     for user, item_list in enumerate(user_list):
         for item, rate in item_list:
             click_pair.append((user, item, rate)) if rate < 5 else buy_pair.append((user, item, rate))

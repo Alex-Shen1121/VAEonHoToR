@@ -229,7 +229,7 @@ if __name__ == '__main__':
     # Model
     parser.add_argument('--dim',
                         type=int,
-                        default=20,
+                        default=200,
                         help="Dimension for embedding")
     # Optimizer
     parser.add_argument('--lr',
@@ -247,7 +247,7 @@ if __name__ == '__main__':
                         help="Number of epoch during training")
     parser.add_argument('--batch_size',
                         type=int,
-                        default=4096,
+                        default=256,
                         help="Batch size in one iteration")
     parser.add_argument('--print_every_batch',
                         type=int,

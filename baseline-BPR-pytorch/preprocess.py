@@ -76,35 +76,22 @@ def create_user_list(df, user_size):
     return user_list
 
 
-def split_train_test(df, user_size, test_size=0.2, time_order=False):
+def split_train_test(df, user_size, test_size=0.2):
     """Split a dataset into `train_user_list` and `test_user_list`.
     Because it needs `user_list` for splitting dataset as `time_order` is set,
     Returning `user_list` data structure will be a good choice."""
-    if not time_order:
-        test_idx = np.random.choice(len(df), size=int(len(df) * test_size), replace=False)
-        train_idx = list(set(range(len(df))) - set(test_idx))
-        test_df = df.loc[test_idx].reset_index(drop=True)
-        train_df = df.loc[train_idx].reset_index(drop=True)
-        # 区分训练集是否保留小于4分的数据
-        if args.removeRateUnderFour == "True":
-            train_df = train_df[train_df['rate'] >= 4].reset_index(drop=True)
-        # 测试集只取4/5分为推荐目标
-        test_df = test_df[test_df['rate'] >= 4].reset_index(drop=True)
-        test_user_list = create_user_list(test_df, user_size)
-        train_user_list = create_user_list(train_df, user_size)
-    else:
-        total_user_list = create_user_list(df, user_size)
-        train_user_list = [None] * len(user_list)
-        test_user_list = [None] * len(user_list)
-        for user, item_list in enumerate(total_user_list):
-            # Choose the latest item
-            item_list = sorted(item_list, key=lambda x: x[0])
-            # Split item
-            test_item = item_list[math.ceil(len(item_list) * (1 - test_size)):]
-            train_item = item_list[:math.ceil(len(item_list) * (1 - test_size))]
-            # Register to each user list
-            test_user_list[user] = test_item
-            train_user_list[user] = train_item
+
+    test_idx = np.random.choice(len(df), size=int(len(df) * test_size), replace=False)
+    train_idx = list(set(range(len(df))) - set(test_idx))
+    test_df = df.loc[test_idx].reset_index(drop=True)
+    train_df = df.loc[train_idx].reset_index(drop=True)
+    # 区分训练集是否保留小于4分的数据
+    train_df = train_df[train_df['rate'] >= 4].reset_index(drop=True)
+    # 测试集只取4/5分为推荐目标
+    test_df = test_df[test_df['rate'] >= 4].reset_index(drop=True)
+    test_user_list = create_user_list(test_df, user_size)
+    train_user_list = create_user_list(train_df, user_size)
+
     # Remove time
     test_user_list = [list(map(lambda x: x[1], l)) for l in test_user_list]
     train_user_list = [list(map(lambda x: x[1], l)) for l in train_user_list]
@@ -134,10 +121,7 @@ def main(args):
     user_size = len(df['user'].unique())
     item_size = len(df['item'].unique())
 
-    train_user_list, test_user_list = split_train_test(df,
-                                                       user_size,
-                                                       test_size=args.test_size,
-                                                       time_order=args.time_order)
+    train_user_list, test_user_list = split_train_test(df, user_size, test_size=args.test_size, )
     print('Complete spliting items for training and testing')
 
     train_pair = create_pair(train_user_list)
@@ -166,13 +150,9 @@ if __name__ == '__main__':
                         type=str,
                         default=os.path.join('preprocessed', 'ml-1m.pickle'),
                         help="File path for preprocessed data")
-    parser.add_argument('--removeRateUnderFour',
-                        type=str,
-                        default="False",
-                        help="Remove Set (rate under 4)s")
     parser.add_argument('--test_size',
                         type=float,
-                        default=0.2,
+                        default=0.4,
                         help="Proportion for training and testing split")
     parser.add_argument('--time_order',
                         action='store_true',

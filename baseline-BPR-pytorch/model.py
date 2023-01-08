@@ -30,8 +30,8 @@ class BPR(nn.Module):
         u = self.U[u, :]
         i = self.V[i, :]
         j = self.V[j, :]
-        x_ui = torch.mul(u, i).sum(dim=1)
-        x_uj = torch.mul(u, j).sum(dim=1)
+        x_ui = torch.mul(u, i).sum(dim=1) + biasI
+        x_uj = torch.mul(u, j).sum(dim=1) + biasJ
         x_uij = x_ui - x_uj
         # log_prob = F.logsigmoid(x_uij).sum()
         log_prob = x_uij.sigmoid().log().sum()

@@ -216,11 +216,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset',
                         type=str,
-                        default="ml-100k",
+                        default="BookCrossing",
                         help="Proceeding Dataset")
     parser.add_argument('--data',
                         type=str,
-                        default=os.path.join('preprocessed', 'ml-100k.pickle'),
+                        default=os.path.join('preprocessed','BookCrossing', 'ml-100k.pickle'),
                         help="File path for data")
     # Seed
     parser.add_argument('--seed',

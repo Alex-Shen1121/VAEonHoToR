@@ -31,8 +31,8 @@ class HoToR(nn.Module):
         u = self.U[u, :]
         i = self.V[i, :]
         j = self.V[j, :]
-        x_ui = torch.mul(u, i).sum(dim=1)
-        x_uj = torch.mul(u, j).sum(dim=1)
+        x_ui = torch.mul(u, i).sum(dim=1) + biasI
+        x_uj = torch.mul(u, j).sum(dim=1) + biasJ
         r_uij = x_ui - x_uj
         barr_ui = torch.tensor(
             [1 if r == 5 else (math.pow(2, r) - 1) / math.pow(2, 5) for r in r_ui],

@@ -126,6 +126,7 @@ def precision_and_recall_k(user_emb, item_emb, bias_emb, train_user_list, test_u
 
     result = result.cpu()
     # Sort indice and get test_pred_topk
+    user_count_test = sum([1 if len(l) == 0 else 0 for l in test_user_list])
     precisions, recalls = [], []
     for k in klist:
         precision, recall = 0, 0
@@ -135,8 +136,8 @@ def precision_and_recall_k(user_emb, item_emb, bias_emb, train_user_list, test_u
             val = len(test & pred)
             precision += val / max([min([k, len(test)]), 1])
             recall += val / max([len(test), 1])
-        precisions.append(precision / user_emb.shape[0])
-        recalls.append(recall / user_emb.shape[0])
+        precisions.append(precision / user_count_test)
+        recalls.append(recall / user_count_test)
     return precisions, recalls
 
 
@@ -164,7 +165,6 @@ def main(args):
     )
 
     # Training
-    smooth_loss = 0
     idx = 0
     epoch_start_time = time.time()
     start_time = time.time()
@@ -233,11 +233,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset',
                         type=str,
-                        default="ml-1m",
+                        default="BookCrossing",
                         help="Proceeding Dataset")
     parser.add_argument('--data',
                         type=str,
-                        default=os.path.join('preprocessed', 'ml-1m.pickle'),
+                        default=os.path.join('preprocessed', 'BookCrossing', 'BookCrossing.pickle'),
                         help="File path for data")
     # Seed
     parser.add_argument('--seed',
@@ -265,7 +265,7 @@ if __name__ == '__main__':
                         help="Number of epoch during training")
     parser.add_argument('--batch_size',
                         type=int,
-                        default=4096,
+                        default=512,
                         help="Batch size in one iteration")
     parser.add_argument('--lambda_mod',
                         type=float,
@@ -293,7 +293,7 @@ if __name__ == '__main__':
                         help="model running on X device")
     parser.add_argument('--model',
                         type=str,
-                        default=os.path.join('output', 'ml-1m', 'bpr.pt'),
+                        default=os.path.join('output', 'BookCrossing', 'bpr.pt'),
                         help="File path for model")
     parser.add_argument('--worker_count',
                         type=int,

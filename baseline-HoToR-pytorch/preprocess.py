@@ -73,6 +73,30 @@ class MovieLens100K(DatasetLoader):
         return train_df, test_df
 
 
+class MovieLens10M(DatasetLoader):
+    def __init__(self, data_dir, dataset_num):
+        self.train_fpath = os.path.join(data_dir,
+                                        'ML10M.ExplicitPositive4Ranking.copy' + str(dataset_num) + '.explicit')
+        self.test_fpath = os.path.join(data_dir, 'ML10M.ExplicitPositive4Ranking.copy' + str(dataset_num) + '.test')
+
+    def load(self):
+        train_df = pd.read_csv(self.train_fpath,
+                               sep=' ',
+                               names=['user', 'item', 'rate'],
+                               usecols=['user', 'item', 'rate'])
+        test_df = pd.read_csv(self.test_fpath,
+                              sep=' ',
+                              names=['user', 'item'],
+                              usecols=['user', 'item'])
+
+        train_df['user'] -= 1
+        train_df['item'] -= 1
+        test_df['user'] -= 1
+        test_df['item'] -= 1
+
+        return train_df, test_df
+
+
 class BookCrossing(DatasetLoader):
     def __init__(self, data_dir, dataset_num):
         self.train_fpath = os.path.join(data_dir, 'copy' + str(dataset_num) + '.train')
@@ -137,6 +161,8 @@ def main(args):
         df = MovieLens20M(args.data_dir).load()
     elif args.dataset == 'ml-100k':
         train_df, test_df = MovieLens100K(args.data_dir, args.dataset_num).load()
+    elif args.dataset == 'ml-10m':
+        train_df, test_df = MovieLens10M(args.data_dir, args.dataset_num).load()
     elif args.dataset == 'BookCrossing':
         train_df, test_df = BookCrossing(args.data_dir, args.dataset_num).load()
     else:
@@ -167,7 +193,7 @@ if __name__ == '__main__':
     # Parse argument
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset',
-                        choices=['ml-1m', 'ml-20m', 'ml-100k', 'BookCrossing', 'ML-10M', 'Netflix'],
+                        choices=['ml-1m', 'ml-20m', 'ml-100k', 'BookCrossing', 'ml-10m', 'Netflix'],
                         default='BookCrossing')
     parser.add_argument('--data_dir',
                         type=str,

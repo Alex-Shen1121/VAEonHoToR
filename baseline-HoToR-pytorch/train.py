@@ -35,49 +35,7 @@ class TripletUniformPair(IterableDataset):
         self.lambda_mod = lambda_mod
 
     def __iter__(self):
-        worker_info = get_worker_info()
-        # Shuffle per epoch
-        self.example_size = self.num_epochs * (len(self.click_pair) + len(self.buy_pair))
-        self.example_index_queue = deque([])
-        self.seed = 0
-        if worker_info is not None:
-            self.start_list_index = worker_info.id
-            self.num_workers = worker_info.num_workers
-            self.index = worker_info.id
-        else:
-            self.start_list_index = None
-            self.num_workers = 1
-            self.index = 0
-        return self
-
-    def __next__(self):
-        # todo: 采样的时候要考虑lambda
-        if self.index >= self.example_size:
-            raise StopIteration
-        # If `example_index_queue` is used up, replenish this list.
-        while len(self.example_index_queue) == 0:
-            index_list = np.random.choice(
-                range(len(self.total_pair)),
-                size=len(self.total_pair),
-                replace=True,
-                p=list([self.lambda_mod / len(self.click_pair)] * len(self.click_pair) +
-                       [(1 - self.lambda_mod) / len(self.buy_pair)] * len(self.buy_pair))
-            )
-
-            # index_list = list(range(len(self.total_pair)))
-
-            if self.shuffle:
-                random.Random(self.seed).shuffle(index_list)
-                self.seed += 1
-            if self.start_list_index is not None:
-                index_list = index_list[self.start_list_index::self.num_workers]
-                # Calculate next start index
-                self.start_list_index = (self.start_list_index + (
-                        self.num_workers - (len(self.total_pair) % self.num_workers))) % self.num_workers
-            self.example_index_queue.extend(index_list)
-        result = self._example(self.example_index_queue.popleft())
-        self.index += self.num_workers
-        return result
+        return self.get_batch()
 
     def _example(self, idx):
         u = self.total_pair[idx][0]
@@ -87,6 +45,23 @@ class TripletUniformPair(IterableDataset):
         while j in self.user_list[u]:
             j = np.random.randint(self.num_item)
         return u, i, r_ui, j
+
+    def get_batch(self):
+        for i in range(self.num_epochs * (len(self.total_pair) // args.batch_size)):
+            randomNum = random.Random().random()
+            # print(randomNum)
+            if randomNum < args.lambda_mod:
+                isClick = True
+            else:
+                isClick = False
+            if isClick:
+                idx = np.random.choice(list(range(len(self.click_pair))), size=args.batch_size)
+                for index in idx:
+                    yield self._example(index)
+            else:
+                idx = np.random.choice(list(range(len(self.buy_pair))), size=args.batch_size)
+                for index in idx:
+                    yield self._example(index + len(self.click_pair))
 
 
 def precision_and_recall_k(user_emb, item_emb, bias_emb, train_user_list, test_user_list, klist, batch=512):
@@ -137,7 +112,6 @@ def precision_and_recall_k(user_emb, item_emb, bias_emb, train_user_list, test_u
             test = set(test_user_list[i])
             pred = set(result[i, :k].numpy().tolist())
             val = len(test & pred)
-            # precision += val / max([min([k, len(test)]), 1])
             precision += val / k
             recall += val / max([len(test), 1])
         precisions.append(precision / warmup_user_count)
@@ -160,7 +134,7 @@ def main(args):
 
     # Create dataset, model, optimizer
     dataset = TripletUniformPair(item_size, train_user_list, click_pair, buy_pair, True, args.n_epochs, args.lambda_mod)
-    loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.worker_count, drop_last=True)
+    loader = DataLoader(dataset, batch_size=args.batch_size, drop_last=True)
     model = HoToR(user_size, item_size, args.dim, args.weight_decay).to(args.device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
     writer = SummaryWriter(
@@ -269,7 +243,7 @@ if __name__ == '__main__':
                         help="Number of epoch during training")
     parser.add_argument('--batch_size',
                         type=int,
-                        default=512,
+                        default=1024,
                         help="Batch size in one iteration")
     parser.add_argument('--lambda_mod',
                         type=float,

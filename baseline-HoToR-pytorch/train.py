@@ -102,18 +102,18 @@ def precision_and_recall_k(user_emb, item_emb, bias_emb, train_user_list, test_u
     result = result.cpu()
     # Sort indice and get test_pred_topk
     warmup_user_count = 0
-    for u in range(len(user_emb)):
-        if len(train_user_list[u]) != 0 and len(test_user_list[u]) != 0:
-            warmup_user_count += 1
     precisions, recalls = [], []
     for k in klist:
         precision, recall = 0, 0
         for i in range(user_emb.shape[0]):
+            if len(train_user_list[i]) == 0 or len(test_user_list[i]) == 0:
+                continue
+            warmup_user_count += 1
             test = set(test_user_list[i])
             pred = set(result[i, :k].numpy().tolist())
             val = len(test & pred)
             precision += val / k
-            recall += val / max([len(test), 1])
+            recall += val / len(test)
         precisions.append(precision / warmup_user_count)
         recalls.append(recall / warmup_user_count)
     return precisions, recalls

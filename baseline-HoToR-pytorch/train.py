@@ -126,7 +126,10 @@ def precision_and_recall_k(user_emb, item_emb, bias_emb, train_user_list, test_u
 
     result = result.cpu()
     # Sort indice and get test_pred_topk
-    user_count_test = sum([1 if len(l) == 0 else 0 for l in test_user_list])
+    warmup_user_count = 0
+    for u in range(len(user_emb)):
+        if len(train_user_list[u]) != 0 and len(test_user_list[u]) != 0:
+            warmup_user_count += 1
     precisions, recalls = [], []
     for k in klist:
         precision, recall = 0, 0
@@ -134,10 +137,11 @@ def precision_and_recall_k(user_emb, item_emb, bias_emb, train_user_list, test_u
             test = set(test_user_list[i])
             pred = set(result[i, :k].numpy().tolist())
             val = len(test & pred)
-            precision += val / max([min([k, len(test)]), 1])
+            # precision += val / max([min([k, len(test)]), 1])
+            precision += val / k
             recall += val / max([len(test), 1])
-        precisions.append(precision / user_count_test)
-        recalls.append(recall / user_count_test)
+        precisions.append(precision / warmup_user_count)
+        recalls.append(recall / warmup_user_count)
     return precisions, recalls
 
 
@@ -269,7 +273,7 @@ if __name__ == '__main__':
                         help="Batch size in one iteration")
     parser.add_argument('--lambda_mod',
                         type=float,
-                        default=0.4,
+                        default=0.5,
                         help="Probability for selecting from click_pair")
     parser.add_argument('--print_every_batch',
                         type=int,

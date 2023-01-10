@@ -16,16 +16,6 @@ class HoToR(nn.Module):
         self.weight_decay = weight_decay
 
     def forward(self, u, i, r_ui, j):
-        """Return loss value.
-
-        Args:
-            u(torch.LongTensor): tensor stored user indexes. [batch_size,]
-            i(torch.LongTensor): tensor stored item indexes which is prefered by user. [batch_size,]
-            j(torch.LongTensor): tensor stored item indexes which is not prefered by user. [batch_size,]
-
-        Returns:
-            torch.FloatTensor
-        """
         biasI = self.biasV[i]
         biasJ = self.biasV[j]
         u = self.U[u, :]
@@ -39,7 +29,6 @@ class HoToR(nn.Module):
             requires_grad=False
         )
         r_uij = r_uij * barr_ui
-        # log_prob = F.logsigmoid(x_uij).sum()
         log_prob = r_uij.sigmoid().log().sum()
         regularization = self.weight_decay * (
                 u.norm(dim=1).pow(2).sum() +
